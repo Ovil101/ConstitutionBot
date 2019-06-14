@@ -11,32 +11,48 @@ def main(): # god help our poor bot if he goes over the 30 requests per minute l
 		print("Found "+str(len(messages))+" new mentions")
 		for mention in messages:
 			string = ""
+			print("Mention: "+mention.body)
 			split = str(mention.body).split(" ") # don't care about index 0
 			
 			for i in range(len(split)):
 				split[i] = split[i].lower() # sanitize inputs
 
 			if split[1] == "amendment":
-				string = "Amendment "+split[2]+"\n"*2+">"+get_content(split[1]+split[2])
-			elif split[1] == "bill of rights":
-				string = "Bill of Rights "+"\n"*2+">"+get_content("billofrights")
+				string = "Amendment "+split[2]+"\n"*2
+				content = get_content(split[1]+split[2])
+			elif split[1] == "bill" and split[2] == "of" and split[3] and "rights":
+				string = "Bill of Rights "+"\n"*2
+				content = get_content("billofrights")
 			elif split[1] == "preamble":
-				string = "Preamble "+"\n"*2+">"+get_content("preamble")
-			elif split[1] == "article" and split[3] == "section":
+				string = "Preamble "+"\n"*2
+				content = get_content("preamble")
+			elif split[1] == "article":
 				try:
-					if split[5] == "clause": # if index 5 exists, this will work
-						string = "Article "+split[2]+"section "+split[4]+"\n"*2+">"+get_content(split[1]+split[2]+split[3]+split[4]+split[5]+split[6])
-				except IndexError: # if index 5 does not work
-					string = "Article "+split[2]+"section "+"\n"*2+">"+get_content(split[1]+split[2]+split[3]+split[4])
+					if split[3] == "section":
+						try:
+							if split[5] == "clause": # article section clause
+								string = "Article "+split[2]+" section "+split[4]+" clause "+split[6]+"\n"*2
+								content = get_content(split[1]+split[2]+split[3]+split[4]+split[5]+split[6])
+						except IndexError: # article section
+							string = "Article "+split[2]+" section "+split[4]+"\n"*2
+							content = get_content(split[1]+split[2]+split[3]+split[4])
+				except IndexError: # article
+					string = "Article "+split[2]+"\n"*2
+					content = get_content(split[1]+split[2])
+			else: # doesnt understand comment
+				content = ""
+				reddit.inbox.mark_read([mention]) # mark mention as read 
 			try:
-				if string != "":
-					mention.reply(string)
+				if content != "":
+					mention.reply(string+content)
 					reddit.inbox.mark_read([mention]) # mark mention as read
-					print("Replied to: "+mention.parent_id)
+					print("Replied to: "+str(mention))
 			except praw.exceptions.APIException:
-				print("Waiting 9 minutes")
+				print("Waiting 9 minutes") # using too much and have to wait
 				sleep(60*9)
 
+			sleep(3) # PRAW limits to 1 request every 2 seconds, waiting 3 to be safe
+			
 		print("Waiting 30 seconds")
 		sleep(30) # check for new mentions every 30(ish) seconds, prevents ratelimit problems
 
@@ -49,7 +65,7 @@ def get_content(command):
 			content = file.readlines()
 		return "".join(content)
 	except FileNotFoundError:
-		return ""
+		return "" # just incase something isnt understood
 
 # get unread mentions
 def get_messages(reddit):
