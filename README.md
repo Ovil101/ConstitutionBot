@@ -22,8 +22,8 @@ The arguments are not case sensitive
 
 If a command it not understood, the comment is ignored
 
-`/u/constitution-bot` aendment 27
+`/u/constitution-bot aendment 27`
 
 Requests for parts that don't exist are also ignored
 
-`/u/constitution-bot` article 1 section 7 clause 4
+`/u/constitution-bot article 1 section 7 clause 4`
